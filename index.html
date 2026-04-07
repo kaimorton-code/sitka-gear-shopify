@@ -86,11 +86,37 @@
     }
     .hero > * { position: relative; z-index: 1; }
     .hero-eyebrow {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(107,122,80,0.12); border: 1px solid rgba(107,122,80,0.45);
-      border-radius: 100px; padding: 8px 22px;
-      font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-      color: var(--sitka-olive); margin-bottom: 40px;
+      display: inline-flex; align-items: center; gap: 12px;
+      background: linear-gradient(
+        160deg,
+        #5a5a5a 0%, #b8b8b8 12%, #888888 25%,
+        #d4d4d4 40%, #a0a0a0 55%, #cecece 70%,
+        #909090 85%, #bababa 100%
+      );
+      border-radius: 5px;
+      padding: 11px 28px 11px 20px;
+      font-size: 12px; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase;
+      color: #1e1e1e;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.5), 0 -1px 0 rgba(0,0,0,0.25);
+      margin-bottom: 40px;
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow:
+        0 6px 24px rgba(0,0,0,0.55),
+        0 2px 4px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.5),
+        inset 0 -1px 0 rgba(0,0,0,0.25);
+      /* Brushed metal texture */
+      position: relative;
+    }
+    .hero-eyebrow::after {
+      content: '';
+      position: absolute; inset: 0; border-radius: 5px;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent 0px, transparent 3px,
+        rgba(255,255,255,0.04) 3px, rgba(255,255,255,0.04) 4px
+      );
+      pointer-events: none;
     }
     .hero h1 {
       font-size: clamp(42px, 6vw, 80px);
@@ -407,9 +433,8 @@
   <!-- HERO -->
   <div class="hero">
     <div class="hero-eyebrow">
-      <div style="width:6px;height:6px;border-radius:50%;background:var(--sitka-olive);"></div>
+      <span style="width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,0.55);border:1px solid rgba(0,0,0,0.5);box-shadow:inset 0 1px 3px rgba(0,0,0,0.9),0 1px 0 rgba(255,255,255,0.25);display:block;flex-shrink:0;"></span>
       Built for Sitka Gear
-      <div style="width:6px;height:6px;border-radius:50%;background:var(--sitka-olive);"></div>
     </div>
     <h1><span class="plus-word">Plus</span> vs <span class="ent-word">Enterprise</span><br>Side by Side</h1>
     <p class="hero-sub">
