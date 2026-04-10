@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Commerce scenarios — Checkout, payments, shipping &amp; tracking</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  :root {
+    --green: #008060;
+    --green-light: #95BF47;
+    --green-dark: #004C3F;
+    --lime: #B5F13B;
+    --black: #0D0D0D;
+    --white: #FFFFFF;
+    --gray: #6B7177;
+    --gray-light: #F6F6F7;
+    --purple: #5C6AC4;
+    --gradient: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 50%, var(--green-light) 100%);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--black);
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .mesh-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 30%, rgba(0,128,96,0.22) 0%, transparent 55%),
+      radial-gradient(ellipse at 80% 70%, rgba(92,106,196,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(149,191,71,0.08) 0%, transparent 45%);
+    animation: mesh-shift 14s ease-in-out infinite alternate;
+  }
+  @keyframes mesh-shift {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(12deg); }
+  }
+
+  .particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+  .particles span {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: var(--green-light);
+    border-radius: 50%;
+    opacity: 0;
+    animation: float-up 10s infinite;
+  }
+  .particles span:nth-child(1)  { left: 8%;  animation-delay: 0s;   animation-duration: 8s; }
+  .particles span:nth-child(2)  { left: 22%; animation-delay: 1s;   animation-duration: 11s; }
+  .particles span:nth-child(3)  { left: 40%; animation-delay: 0.4s; animation-duration: 7s; }
+  .particles span:nth-child(4)  { left: 58%; animation-delay: 2s;   animation-duration: 9s; }
+  .particles span:nth-child(5)  { left: 78%; animation-delay: 0.9s; animation-duration: 10s; }
+  .particles span:nth-child(6)  { left: 91%; animation-delay: 1.4s; animation-duration: 8.5s; }
+
+  @keyframes float-up {
+    0%   { bottom: -5%; opacity: 0; }
+    15%  { opacity: 0.45; }
+    100% { bottom: 105%; opacity: 0; }
+  }
+
+  .progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--green-light), var(--lime));
+    z-index: 1000;
+    width: 0%;
+    transition: width 0.15s ease-out;
+  }
+
+  /* ─── Top bar ─── */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 32px;
+    background: rgba(13,13,13,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .brand-shopify {
+    height: 28px;
+    width: auto;
+    display: block;
+  }
+  .brand-merchant {
+    display: flex;
+    align-items: center;
+    border-left: 1px solid rgba(255,255,255,0.12);
+    padding-left: 14px;
+    margin-left: 2px;
+  }
+  .brand-merchant img {
+    height: 40px;
+    width: auto;
+    max-width: 120px;
+    object-fit: contain;
+    display: block;
+  }
+
+  .nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    justify-content: flex-end;
+  }
+  .nav-links a {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav-links a:hover { color: var(--lime); background: rgba(255,255,255,0.04); }
+  .nav-links a.is-active {
+    color: var(--black);
+    background: var(--green-light);
+  }
+  .nav-links a.is-soon {
+    opacity: 0.35;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  @media (max-width: 900px) {
+    .site-header { flex-direction: column; align-items: flex-start; }
+    .nav-links { width: 100%; justify-content: flex-start; }
+  }
+
+  /* ─── Layout ─── */
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 48px 28px 100px;
+  }
+
+  .section-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--green-light);
+    margin-bottom: 16px;
+  }
+  .section-label::before {
+    content: '';
+    width: 22px;
+    height: 2px;
+    background: var(--green-light);
+  }
+
+  .headline {
+    font-size: clamp(2rem, 4.5vw, 3.25rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.03em;
+    margin-bottom: 20px;
+  }
+  .headline .accent {
+    background: linear-gradient(135deg, var(--green-light), var(--lime));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subhead {
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    font-weight: 400;
+    color: rgba(255,255,255,0.68);
+    max-width: 720px;
+    line-height: 1.65;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 40px 0 56px;
+  }
+  .hero .subhead { margin: 0 auto; }
+
+  .flow-line {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    margin: 36px auto;
+    max-width: 320px;
+    overflow: hidden;
+    position: relative;
+  }
+  .flow-line::after {
+    content: '';
+    position: absolute;
+    height: 100%;
+    width: 45%;
+    background: linear-gradient(90deg, transparent, var(--green), var(--green-light), transparent);
+    animation: flow-move 2.8s ease-in-out infinite;
+    border-radius: 4px;
+  }
+  @keyframes flow-move {
+    0%   { left: -45%; }
+    100% { left: 100%; }
+  }
+
+  /* ─── TOC cards ─── */
+  .toc-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  @media (max-width: 700px) { .toc-grid { grid-template-columns: 1fr; } }
+
+  .toc-item {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 20px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.02);
+    transition: background 0.25s ease;
+  }
+  @media (min-width: 701px) {
+    .toc-item:nth-child(2n) { border-right: none; }
+    .toc-item:nth-last-child(-n+2) { border-bottom: none; }
+  }
+  @media (max-width: 700px) {
+    .toc-item { border-right: none; }
+    .toc-item:last-child { border-bottom: none; }
+  }
+  .toc-item:hover { background: rgba(255,255,255,0.04); }
+  .toc-item a {
+    display: contents;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .toc-num {
+    font-size: 1.35rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--green-light), var(--lime));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    width: 40px;
+    flex-shrink: 0;
+  }
+  .toc-text h2 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .toc-text p {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.45);
+    line-height: 1.4;
+  }
+  .toc-soon {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* ─── Topic section ─── */
+  .topic-section {
+    margin-top: 72px;
+    padding-top: 48px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .topic-section:first-of-type { border-top: none; margin-top: 32px; padding-top: 0; }
+
+  .topic-block {
+    margin-top: 40px;
+    padding: 28px 28px 32px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+  .topic-block:hover {
+    border-color: rgba(0,128,96,0.35);
+    box-shadow: 0 16px 48px rgba(0,128,96,0.08);
+  }
+
+  .topic-block h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 14px;
+    letter-spacing: -0.02em;
+  }
+
+  .topic-block p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    color: rgba(255,255,255,0.72);
+    margin-bottom: 14px;
+  }
+  .topic-block p:last-child { margin-bottom: 0; }
+
+  .resource-links {
+    list-style: none;
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .resource-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--green-light);
+    text-decoration: none;
+    width: fit-content;
+  }
+  .resource-links a:hover { color: var(--lime); text-decoration: underline; text-underline-offset: 3px; }
+  .resource-links a::after {
+    content: '→';
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  /* Documentation as buttons (Section 1 + shared) */
+  .resource-links.doc-buttons {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .resource-links.doc-buttons li { list-style: none; margin: 0; padding: 0; }
+  .resource-links.doc-buttons a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: var(--green);
+    color: var(--white);
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    box-shadow: 0 2px 12px rgba(0,128,96,0.25);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    width: auto;
+    max-width: 100%;
+  }
+  .resource-links.doc-buttons a:hover {
+    background: var(--green-light);
+    color: var(--black);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,128,96,0.35);
+  }
+  .resource-links.doc-buttons a::after {
+    content: '↗';
+    font-size: 0.72rem;
+    opacity: 0.85;
+    font-weight: 700;
+  }
+
+  .content-figure {
+    margin: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.35);
+  }
+  .content-figure img {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    display: block;
+    vertical-align: middle;
+  }
+  .content-figure figcaption {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.42);
+    padding: 8px 12px 10px;
+    line-height: 1.45;
+  }
+
+  /* Section 1: click to enlarge */
+  #section-1 .content-figure img,
+  #section-2 .content-figure img,
+  #section-3 .content-figure img,
+  #section-4 .content-figure img {
+    cursor: zoom-in;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  #section-1 .content-figure img:hover,
+  #section-2 .content-figure img:hover,
+  #section-3 .content-figure img:hover,
+  #section-4 .content-figure img:hover {
+    box-shadow: 0 0 0 2px rgba(149,191,71,0.45);
+  }
+
+  /* Image lightbox */
+  .image-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 2500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px 24px;
+    background: rgba(13,13,13,0.92);
+    backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+  .image-lightbox.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  .image-lightbox-inner {
+    position: relative;
+    max-width: min(96vw, 1680px);
+    max-height: 92vh;
+    margin: auto;
+  }
+  .image-lightbox-img {
+    display: block;
+    max-width: min(96vw, 1680px);
+    max-height: 92vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .image-lightbox-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 2501;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.1);
+    color: var(--white);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .image-lightbox-close:hover {
+    background: var(--green);
+    color: var(--white);
+  }
+  .image-lightbox-hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.45);
+    pointer-events: none;
+  }
+
+  /* Image left, copy right (+25% vs prior) */
+  .topic-split {
+    display: grid;
+    grid-template-columns: minmax(0, 425px) minmax(0, 1fr);
+    gap: 24px 32px;
+    align-items: start;
+    margin-top: 12px;
+  }
+  .topic-split-media {
+    min-width: 0;
+  }
+  .topic-split-media > .content-figure img {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    margin: 0 auto;
+    display: block;
+  }
+  .topic-split-body p {
+    margin-bottom: 12px;
+  }
+  .topic-split-body p:last-of-type {
+    margin-bottom: 0;
+  }
+  .topic-split-body p a {
+    color: var(--green);
+    text-decoration: underline;
+    text-decoration-color: rgba(0, 128, 96, 0.55);
+    text-underline-offset: 3px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+  .topic-split-body p a:hover {
+    color: var(--green-light);
+    text-decoration-color: var(--green-light);
+  }
+  .topic-split-body p a:visited {
+    color: var(--green);
+  }
+  .topic-split-body p a:visited:hover {
+    color: var(--green-light);
+  }
+  #section-4 .topic-block p a {
+    color: var(--green);
+    text-decoration: underline;
+    text-decoration-color: rgba(0, 128, 96, 0.55);
+    text-underline-offset: 3px;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+  #section-4 .topic-block p a:hover {
+    color: var(--green-light);
+    text-decoration-color: var(--green-light);
+  }
+  #section-4 .topic-block p a:visited {
+    color: var(--green);
+  }
+  #section-4 .topic-block p a:visited:hover {
+    color: var(--green-light);
+  }
+  @media (max-width: 768px) {
+    .topic-split {
+      grid-template-columns: 1fr;
+    }
+    .topic-split-media .content-figure img {
+      max-width: 100%;
+    }
+  }
+
+  /* Horizontal screenshot carousel */
+  .figure-scroll-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+  .figure-scroll-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 4px;
+  }
+  .figure-scroll-wrap:not(.is-scrollable) .figure-scroll-nav-row {
+    display: none;
+  }
+  .figure-scroll-btn {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.92);
+    font-size: 1.35rem;
+    line-height: 1;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  }
+  .figure-scroll-btn:hover:not(:disabled) {
+    background: rgba(0,128,96,0.35);
+    border-color: rgba(149,191,71,0.45);
+    color: var(--white);
+  }
+  .figure-scroll-btn:focus-visible {
+    outline: 2px solid rgba(149,191,71,0.6);
+    outline-offset: 2px;
+  }
+  .figure-scroll-btn:disabled {
+    opacity: 0.28;
+    cursor: not-allowed;
+  }
+  .figure-scroll-clip {
+    position: relative;
+    border-radius: 12px;
+  }
+  .figure-scroll-clip::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 12px;
+    width: 40px;
+    pointer-events: none;
+    background: linear-gradient(to left, rgba(13,13,13,0.96) 0%, rgba(13,13,13,0.4) 55%, transparent 100%);
+    border-radius: 0 12px 0 0;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 1;
+  }
+  .figure-scroll-wrap.is-scrollable:not(.at-end) .figure-scroll-clip::after {
+    opacity: 1;
+  }
+  .figure-scroll {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 14px;
+    margin: 0;
+    scroll-snap-type: x mandatory;
+    scrollbar-color: rgba(0,128,96,0.6) rgba(255,255,255,0.06);
+    position: relative;
+    z-index: 0;
+  }
+  .figure-scroll:focus {
+    outline: 2px solid rgba(149,191,71,0.5);
+    outline-offset: 4px;
+  }
+  .figure-scroll .content-figure {
+    flex: 0 0 auto;
+    width: min(375px, 90vw);
+    scroll-snap-align: start;
+    margin: 0;
+  }
+  .figure-scroll .content-figure img {
+    width: 100%;
+    max-width: 375px;
+    height: auto;
+    display: block;
+  }
+
+  .topic-micro {
+    margin-top: 28px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+  }
+  .topic-micro:first-of-type {
+    margin-top: 6px;
+    padding-top: 0;
+    border-top: none;
+  }
+  .topic-micro h4 {
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin-bottom: 0;
+    letter-spacing: -0.02em;
+    color: rgba(255,255,255,0.95);
+  }
+  .topic-micro .topic-split {
+    margin-top: 14px;
+  }
+  .topic-block > .topic-split {
+    margin-top: 16px;
+  }
+
+  /* Section 1 — merchant alignment / open questions */
+  .topic-block--dialogue {
+    max-width: 720px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 48px;
+    border-color: rgba(149,191,71,0.35);
+    background: linear-gradient(145deg, rgba(0,128,96,0.1), rgba(149,191,71,0.06));
+    text-align: left;
+  }
+  .topic-block--dialogue h3 {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+  .dialogue-lede {
+    text-align: center;
+    font-size: 0.92rem;
+    color: rgba(255,255,255,0.62);
+    line-height: 1.55;
+    margin-bottom: 22px;
+  }
+  .dialogue-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .dialogue-list > li {
+    padding: 18px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(0,0,0,0.22);
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.78);
+  }
+  .dialogue-list strong {
+    color: rgba(255,255,255,0.95);
+    font-weight: 700;
+  }
+  .dialogue-q {
+    margin: 12px 0 0;
+    padding: 12px 0 0 16px;
+    border-left: 3px solid var(--green-light);
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.88);
+  }
+
+  /* Section 4 — “vendor to address” (implementation partner scope); block flow, not flex, so text doesn’t fragment */
+  .callout-vendor {
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: 12px;
+    background: linear-gradient(145deg, rgba(0,128,96,0.14), rgba(149,191,71,0.08));
+    border: 1px solid rgba(149,191,71,0.35);
+  }
+  .callout-vendor-label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--lime);
+    margin-bottom: 8px;
+  }
+  .callout-vendor-body {
+    margin: 0;
+    font-size: 0.88rem;
+    font-weight: 400;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.78);
+  }
+  .callout-vendor-body strong {
+    color: rgba(255,255,255,0.95);
+    font-weight: 700;
+  }
+
+  .two-col-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+    margin-top: 18px;
+  }
+  @media (max-width: 800px) { .two-col-inner { grid-template-columns: 1fr; } }
+
+  .mini-list {
+    list-style: none;
+    margin-top: 12px;
+  }
+  .mini-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.88rem;
+    color: rgba(255,255,255,0.75);
+    line-height: 1.5;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .mini-list li:last-child { border-bottom: none; }
+  .mini-list .dot {
+    flex-shrink: 0;
+    width: 7px;
+    height: 7px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 10px rgba(0,128,96,0.5);
+  }
+
+</style>
+</head>
+<body>
+
+<div class="progress" id="reading-progress" aria-hidden="true"></div>
+
+<div class="bg-layer" aria-hidden="true">
+  <div class="mesh-bg"></div>
+  <div class="particles">
+    <span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+</div>
+
+<header class="site-header">
+  <a class="brand" href="#top" id="top">
+    <img class="brand-shopify" src="assets/shopify-logo.svg" alt="Shopify" width="120" height="34">
+    <span class="brand-merchant">
+      <img src="assets/sitka-logo.png" alt="SITKA" width="120" height="120">
+    </span>
+  </a>
+  <nav class="nav-links" aria-label="Sections">
+    <a href="#section-1">1 · Checkout &amp; shipping</a>
+    <a href="#section-2">2 · Coupons, pricing &amp; scheduling</a>
+    <a href="#section-3">3 · Pro &amp; inventory</a>
+    <a href="#section-4">4 · Analytics &amp; GTM</a>
+  </nav>
+</header>
+
+<main>
+  <header class="hero">
+    <div class="section-label" style="justify-content:center">Technical scenarios</div>
+    <h1 class="headline" style="max-width:900px;margin-left:auto;margin-right:auto">
+      Checkout, payments, shipping<br> &amp; <span class="accent">order tracking</span>
+    </h1>
+    <p class="subhead">
+      A high-level pass on your topics—short explanations, screenshots, and links to Help Center and shopify.dev when you want detail. Coverage spans checkout and role-aware carts, payments and gift instruments, compliance-style shipping restrictions, carriers and rates, buyer-facing tracking, coupons and pricing schedules, pro programs and multi-warehouse inventory, and analytics with GTM and consent.
+    </p>
+    <div class="flow-line" aria-hidden="true"></div>
+
+    <h2 class="section-label" style="justify-content:center;margin-bottom:24px">Navigation</h2>
+    <div class="toc-grid" role="navigation" aria-label="Table of contents">
+      <div class="toc-item">
+        <a href="#section-1">
+          <span class="toc-num">01</span>
+          <div class="toc-text">
+            <h2>Checkout, payments, shipping, tracking</h2>
+            <p>Cart rules, payments, restrictions, carriers, tracking</p>
+          </div>
+        </a>
+      </div>
+      <div class="toc-item">
+        <a href="#section-2">
+          <span class="toc-num">02</span>
+          <div class="toc-text">
+            <h2>Coupons, pricing &amp; scheduling</h2>
+            <p>Unique codes, stacking, Salsify, seasonal windows</p>
+          </div>
+        </a>
+      </div>
+      <div class="toc-item">
+        <a href="#section-3">
+          <span class="toc-num">03</span>
+          <div class="toc-text">
+            <h2>Pro program &amp; multi-warehouse</h2>
+            <p>Omnichannel pricing, GovX, Wisetail, allocation</p>
+          </div>
+        </a>
+      </div>
+      <div class="toc-item">
+        <a href="#section-4">
+          <span class="toc-num">04</span>
+          <div class="toc-text">
+            <h2>Analytics, data layer &amp; GTM</h2>
+            <p>Events, consent, downstream tools</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════ SECTION 1 ═══════════ -->
+  <article class="topic-section" id="section-1" aria-labelledby="section-1-title">
+    <div class="section-label">Section 01</div>
+    <h2 id="section-1-title" class="headline" style="font-size:clamp(1.6rem,3vw,2.4rem)">
+      Checkout, payments, shipping<br><span class="accent">&amp; tracking</span>
+    </h2>
+    <p class="subhead" style="margin-top:12px">
+      Shopify combines a high-trust checkout with extensibility (Functions, UI extensions, apps) so you can deliver the experience you want, the way you want it—thanks to our flexible building blocks.
+    </p>
+
+    <!-- Checkout: address, quantities, copy -->
+    <section class="topic-block" id="s1-checkout-cart" aria-labelledby="s1-h-checkout">
+      <h3 id="s1-h-checkout">Checkout: addresses, quantity rules &amp; customer-facing copy</h3>
+
+      <div class="topic-micro" id="s1-address-validation">
+        <h4>Address validation and autofill</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <figure class="content-figure">
+              <img src="assets/section1/address-validation.png" alt="Checkout shipping form showing address suggestions for validation" width="1200" height="800" loading="lazy">
+              <figcaption>High-confidence suggestions help buyers fix shipping addresses before the order is placed.</figcaption>
+            </figure>
+          </div>
+          <div class="topic-split-body">
+            <p>When details look wrong or incomplete, checkout can surface issues and suggested corrections automatically—cutting down invalid addresses and delivery exceptions. If you turn validation off or an address sits outside supported countries, buyers can still complete checkout; basic field rules (required, format, length) stay on by market.</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/checkout-settings/address-collection-preferences#address-validation" target="_blank" rel="noopener noreferrer">Address collection &amp; validation</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-micro" id="s1-qty-rules">
+        <h4>Quantity limits by role or SKU</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <figure class="content-figure">
+              <img src="assets/section1/qty-rules.png" alt="Admin: edit quantity rules and volume pricing for a product variant" width="1200" height="800" loading="lazy">
+              <figcaption>Minimum, maximum, and increment rules at the catalog/SKU level flow to B2B buyers on assigned catalogs.</figcaption>
+            </figure>
+          </div>
+          <div class="topic-split-body">
+            <p>Set min, max, and increment per variant inside <strong>B2B catalogs</strong>. Assign the catalog to a <strong>company location</strong>: every contact tied to that location inherits the same limits—ideal for MOQs, case packs, and wholesale guardrails. Rules are enforced through catalog configuration rather than ad hoc per checkout.</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/b2b/catalogs/quantity-pricing" target="_blank" rel="noopener noreferrer">B2B quantity rules &amp; volume pricing</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-micro" id="s1-custom-errors">
+        <h4>Custom error messaging</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <figure class="content-figure">
+              <img src="assets/section1/error-labels.png" alt="Theme language editor showing customizable error heading and form labels" width="1200" height="800" loading="lazy">
+              <figcaption>Many storefront strings—including form headings and errors—are edited in the Language Editor without changing theme code.</figcaption>
+            </figure>
+          </div>
+          <div class="topic-split-body">
+            <p>Most online-store wording comes from theme translations and is edited under <strong>Settings → Languages</strong> (Language Editor). Checkout and system messages are maintained in the same language tools. Shopify <strong>Cart and Checkout Validation</strong> Functions can be used at checkout to supply custom blocking messages. <strong>Checkout Blocks</strong> (powered by Functions) can also reorder, rename, or conditionally hide delivery and payment options.</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/online-store/themes/customizing-themes/language/change-wording" target="_blank" rel="noopener noreferrer">Theme wording &amp; translations</a></li>
+              <li><a href="https://help.shopify.com/en/manual/checkout-settings/checkout-blocks/customizations" target="_blank" rel="noopener noreferrer">Checkout Blocks customizations</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Payments: tender + accelerated -->
+    <section class="topic-block" id="s1-payments" aria-labelledby="s1-h-payments">
+      <h3 id="s1-h-payments">Payments: split tender, gift cards, store credit &amp; accelerated checkout</h3>
+
+      <div class="topic-micro" id="s1-multi-tender">
+        <h4>Multiple gift cards, store credit &amp; card in one checkout</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <figure class="content-figure">
+              <img src="assets/section1/multi-tender-checkout.png" alt="Checkout order summary showing multiple gift cards, store credit, and remaining balance on a card" width="1200" height="800" loading="lazy">
+              <figcaption>Store credit, multiple gift cards, and a card can apply to the same order; you control which methods are enabled.</figcaption>
+            </figure>
+          </div>
+          <div class="topic-split-body">
+            <p>Customers redeem gift cards on the storefront; <strong>store credit</strong> can appear at checkout once issued to a signed-in buyer. <strong>Multiple gift cards</strong>, store credit, and a credit card can combine in a single transaction. Which tenders appear is configured in admin (payment methods and store-credit settings).</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/products/gift-card-products/redeem-gift-card" target="_blank" rel="noopener noreferrer">Redeeming gift cards</a></li>
+              <li><a href="https://help.shopify.com/en/manual/customers/store-credit" target="_blank" rel="noopener noreferrer">Store credit</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-micro" id="s1-fast-pay">
+        <h4>Accelerated / fast pay options</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <figure class="content-figure">
+              <img src="assets/section1/payment-methods.png" alt="Shopify admin Payment methods showing Shop Pay, cards, and wallet toggles" width="1200" height="800" loading="lazy">
+              <figcaption>Turn on Shop Pay, Apple Pay, Google Pay, and other wallets from Payment methods.</figcaption>
+            </figure>
+          </div>
+          <div class="topic-split-body">
+            <p>For most stores, turning on accelerated checkouts is as simple as flipping each method to <strong>on</strong> in <strong>Payment methods</strong>—no code required for the standard Shop Pay, Apple Pay, Google Pay, Amazon Pay, PayPal, and similar options. Where those buttons surface—product page, cart, or checkout—still depends on your theme and integration settings.</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/payments/accelerated-checkouts" target="_blank" rel="noopener noreferrer">Accelerated checkouts</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fraud -->
+    <section class="topic-block" id="s1-fraud" aria-labelledby="s1-h-fraud">
+      <h3 id="s1-h-fraud">Fraud monitoring &amp; automation</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Fraud monitoring screenshots">
+                <figure class="content-figure">
+                  <img src="assets/section1/order-fraud-signals.png" alt="Order details modal showing fraud analysis checklist for an order" width="1200" height="800" loading="lazy">
+                  <figcaption>Per-order fraud checklist summarizes signals to speed manual review.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section1/fraud-flow-templates.png" alt="Shopify Flow template library filtered for fraud-related automations" width="1200" height="800" loading="lazy">
+                  <figcaption>Flow templates automate actions based on risk (e.g. capture only when not high risk).</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Shopify surfaces <strong>fraud signals</strong>, risk indicators, and a fulfillment recommendation so you can review suspicious orders before they ship—important for limiting chargebacks on Shopify Payments and other gateways. <strong>Shopify Flow</strong> adds automation (hold, tag, cancel) using the same risk data. Where eligible, <strong>Shopify Protect</strong> and standard dispute workflows complement the processor’s controls (for example 3-D Secure, AVS/CVV outcomes). Third-party fraud apps help when you need deeper rules, broader channel coverage, or specialized compliance flows—weigh their cost against native risk plus your payment provider’s tooling.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/fulfillment/managing-orders/protecting-orders/fraud-analysis" target="_blank" rel="noopener noreferrer">Fraud analysis &amp; protecting orders</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ship restrictions -->
+    <section class="topic-block" id="s1-ship-restrictions" aria-labelledby="s1-h-restrict">
+      <h3 id="s1-h-restrict">Ship-to rules: profiles &amp; zones</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Shipping zone and profile screenshots">
+                <figure class="content-figure">
+                  <img src="assets/section1/shipping-zone-config.png" alt="Edit shipping zone modal: zone name Domestic and selected regions North America and United States" width="1200" height="800" loading="lazy">
+                  <figcaption>Shipping zone config: name the zone and choose which countries, regions, and states get the rates attached to it.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section1/shipping-profile-config-shipto.png" alt="General shipping profile showing products count, fulfillment locations, and Domestic zone rates" width="1200" height="800" loading="lazy">
+                  <figcaption>Shipping profile: products in the profile, where they ship from, and the live rates shown for each zone (e.g. Domestic).</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p><strong>Shipping profiles</strong> tie products to fulfillment locations and define which <strong>zones</strong> have active methods—checkout only offers shipping that matches that profile + zone matrix. For harder stops (custom messages, mixed-line rules), extend with <strong>checkout customization</strong>: Cart/Checkout Validation Functions, Checkout Blocks, or apps.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/fulfillment/setup/shipping-profiles" target="_blank" rel="noopener noreferrer">Shipping profiles</a></li>
+            <li><a href="https://help.shopify.com/en/manual/checkout-settings/customize-checkout-configurations" target="_blank" rel="noopener noreferrer">Customize checkout configurations</a></li>
+            <li><a href="https://help.shopify.com/en/manual/checkout-settings/checkout-blocks/customizations" target="_blank" rel="noopener noreferrer">Checkout Blocks customizations</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Carriers & rates -->
+    <section class="topic-block" id="s1-carriers" aria-labelledby="s1-h-carriers">
+      <h3 id="s1-h-carriers">Shipping rules &amp; carrier-calculated rates</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Shipping rates and carrier screenshots">
+                <figure class="content-figure">
+                  <img src="assets/section1/shipping-profile-rates.png" alt="Shipping profile domestic zone with tiered economy and standard rates" width="1200" height="800" loading="lazy">
+                  <figcaption>Domestic example: tiered flat rates by weight and order value.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section1/shipping-international-carriers.png" alt="International shipping zone with DHL and USPS calculated rates" width="1200" height="800" loading="lazy">
+                  <figcaption>International zone with carrier-calculated DHL and USPS services.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section1/shipping-option-dhl.png" alt="Edit shipping option for DHL Express carrier-calculated rate" width="1200" height="800" loading="lazy">
+                  <figcaption>Carrier-calculated option editor (DHL Express) with checkout preview.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Within each profile and zone you can mix <strong>flat</strong>, <strong>weight-</strong> or <strong>price-based</strong> rates with <strong>carrier- or app-calculated</strong> options (USPS, UPS, FedEx, DHL, and others via Shopify’s carrier integrations or custom carrier services). That lets you publish table rates domestically while rate-shopping international parcels, for example.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://shopify.dev/docs/api/admin-graphql/latest/objects/DeliveryCarrierService" target="_blank" rel="noopener noreferrer">DeliveryCarrierService (GraphQL)</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tracking + promos -->
+    <section class="topic-block" id="s1-tracking-promos" aria-labelledby="s1-h-tracking">
+      <h3 id="s1-h-tracking">Customer-facing tracking &amp; shipping promotions</h3>
+
+      <div class="topic-micro" id="s1-tracking">
+        <h4>Order status &amp; tracking</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <figure class="content-figure">
+              <img src="assets/section1/order-tracking.png" alt="Customer order status page with shipments, tracking, and payment summary" width="1200" height="800" loading="lazy">
+              <figcaption>Buyers see fulfillment status, tracking links, and payment detail on the order status experience.</figcaption>
+            </figure>
+          </div>
+          <div class="topic-split-body">
+            <p>After you add tracking numbers to fulfillments, customers can follow shipments on the <strong>order status page</strong>, email notifications, and the <strong>Shop</strong> app (where enabled).</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/fulfillment/setup/order-status-page/order-tracking" target="_blank" rel="noopener noreferrer">Order status page &amp; tracking</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="topic-micro" id="s1-ship-promos">
+        <h4>Free or promotional shipping</h4>
+        <div class="topic-split">
+          <div class="topic-split-media">
+            <div class="figure-scroll-wrap">
+              <div class="figure-scroll-clip">
+                <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Free shipping configuration screenshots">
+                  <figure class="content-figure">
+                    <img src="assets/section1/shipping-free-over-threshold.png" alt="Edit shipping option with order amount condition for free standard shipping over seventy dollars" width="1200" height="800" loading="lazy">
+                    <figcaption>Free shipping via a price-conditioned shipping rate on an existing option.</figcaption>
+                  </figure>
+                  <figure class="content-figure">
+                    <img src="assets/section1/free-shipping-discount.png" alt="Shopify admin create free shipping discount with eligibility and countries" width="1200" height="800" loading="lazy">
+                    <figcaption>Free shipping via Discounts (code or automatic) with segment and market controls.</figcaption>
+                  </figure>
+                </div>
+              </div>
+              <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+                <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+                <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+              </div>
+            </div>
+          </div>
+          <div class="topic-split-body">
+            <p>You can reward free shipping either by configuring a <strong>$0 shipping option</strong> (for example when cart value crosses a threshold on an existing method) or by creating <strong>free shipping discounts</strong>—manual codes or automatic discounts with eligibility rules (customers, segments, markets, minimums). Product-specific free shipping often uses a dedicated profile with tailored rates.</p>
+            <ul class="resource-links doc-buttons">
+              <li><a href="https://help.shopify.com/en/manual/fulfillment/setup/shipping-rates/setting-up-shipping-rates#add-free-shipping-to-your-existing-shipping-option" target="_blank" rel="noopener noreferrer">Free shipping on a shipping option</a></li>
+              <li><a href="https://help.shopify.com/en/manual/discounts/discount-types/free-shipping" target="_blank" rel="noopener noreferrer">Free shipping discounts</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block topic-block--dialogue" id="s1-alignment-topics" aria-labelledby="s1-h-dialogue">
+      <h3 id="s1-h-dialogue">Sitka team, let’s align on these</h3>
+      <p class="dialogue-lede">Two areas where your examples will help us pin down the right Shopify patterns.</p>
+      <ul class="dialogue-list">
+        <li>
+          <strong>Related to:</strong> Role based pricing enforcement (Mixed Carts/Overrides/Promotions)<br>
+          <p class="dialogue-q">Can you provide more context around the use cases here?</p>
+        </li>
+        <li>
+          <strong>Related to:</strong> Shipping Promotion Rules/Customer Group/Scheduling<br>
+          <p class="dialogue-q">Can you please elaborate on what you mean by Customer Group/Scheduling?</p>
+        </li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ═══════════ SECTION 2 ═══════════ -->
+  <article class="topic-section" id="section-2" aria-labelledby="section-2-title">
+    <div class="section-label">Section 02</div>
+    <h2 id="section-2-title" class="headline" style="font-size:clamp(1.6rem,3vw,2.4rem)">
+      Coupons, promotions, pricing<br><span class="accent">&amp; scheduling</span>
+    </h2>
+    <p class="subhead" style="margin-top:12px">
+      How Shopify models discount codes, eligibility, product scope, limits, stacking, and timed promotions—alongside B2B <strong>catalogs</strong> for list pricing and integrations such as Salsify for product and price data.
+    </p>
+
+    <section class="topic-block" id="s2-unique-codes" aria-labelledby="s2-h-codes">
+      <h3 id="s2-h-codes">Unique codes &amp; discount distribution</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Discount code and Flow screenshots">
+                <figure class="content-figure">
+                  <img src="assets/section2/create-discount.png" alt="Create discount: amount off products with generated discount code" width="1200" height="800" loading="lazy">
+                  <figcaption>Generate random codes or set your own; customers enter codes online or in <strong>Shopify POS</strong>.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-flow.png" alt="Shopify Flow template search for discount-related automations" width="1200" height="800" loading="lazy">
+                  <figcaption>Flow templates can notify teams, welcome subscribers with offers, and monitor discount usage.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Shopify supports <strong>amount off</strong> (fixed or %), <strong>buy X get Y</strong>, and <strong>free shipping</strong> as codes or automatic discounts. Order-level savings apply to the <strong>subtotal before tax</strong>; tax is calculated on the discounted amount. Codes can be a phrase you choose or a <strong>random unique string</strong>. Customers redeem codes online at checkout or in person via <strong><a href="https://help.shopify.com/en/manual/sell-in-person/shopify-pos/discount-management" target="_blank" rel="noopener noreferrer">Shopify POS</a></strong>. Pair native discounts with <strong>Shopify Flow</strong> to generate alerts, customer journeys, and operational follow-up around codes and campaigns.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts" target="_blank" rel="noopener noreferrer">Discounts overview</a></li>
+            <li><a href="https://help.shopify.com/en/manual/discounts/managing-discounts#manage-discount-eligibility" target="_blank" rel="noopener noreferrer">Manage discount eligibility</a></li>
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-methods/discount-codes" target="_blank" rel="noopener noreferrer">Discount codes</a></li>
+            <li><a href="https://help.shopify.com/en/manual/sell-in-person/shopify-pos/discount-management" target="_blank" rel="noopener noreferrer">POS discount management</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-role-coupons" aria-labelledby="s2-h-role">
+      <h3 id="s2-h-role">Role- and segment-based coupons</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <figure class="content-figure">
+            <img src="assets/section2/discount-eligibility.png" alt="Discount eligibility: specific customer segments selected" width="1200" height="800" loading="lazy">
+            <figcaption>Target all customers, <strong>customer segments</strong>, or named customers.</figcaption>
+          </figure>
+        </div>
+        <div class="topic-split-body">
+          <p>You control which customers can receive a discount by setting <strong>eligibility</strong>—the same options apply to <strong>discount codes</strong> and <strong>automatic discounts</strong>. You can open a promotion to <strong>all customers</strong>, limit it to <strong><a href="https://help.shopify.com/en/manual/customers/customer-segmentation/create-customer-segments" target="_blank" rel="noopener noreferrer">customer segments</a></strong> (groups who share characteristics you define—for example first-time buyers via a segment like <code>number_of_orders = 0</code>), or restrict it to <strong><a href="https://help.shopify.com/en/manual/customers/manage-customers" target="_blank" rel="noopener noreferrer">specific customers</a></strong> you choose. When you use segments, Shopify can recognize qualifying buyers at checkout when they use a <strong>valid email address or phone number</strong>.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts/managing-discounts#edit-a-discount" target="_blank" rel="noopener noreferrer">Edit a discount</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-product-rules" aria-labelledby="s2-h-products">
+      <h3 id="s2-h-products">Include / exclude products &amp; collections</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <figure class="content-figure">
+            <img src="assets/section2/discount-product-rules.png" alt="Discount value percentage and applies to specific products with search" width="1200" height="800" loading="lazy">
+            <figcaption>Scope a promotion to specific products, collections, or the whole order.</figcaption>
+          </figure>
+        </div>
+        <div class="topic-split-body">
+          <p>Merchants choose what a discount touches: <strong><a href="https://help.shopify.com/en/manual/discounts/discount-types/percentage-fixed-amount" target="_blank" rel="noopener noreferrer">amount off</a></strong> deals can apply to a line, a collection, or the entire cart. <strong><a href="https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y" target="_blank" rel="noopener noreferrer">Buy X get Y</a></strong> sets purchase rules and rewards—available as codes or automatic discounts when conditions are met.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts" target="_blank" rel="noopener noreferrer">Discounts</a></li>
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-types" target="_blank" rel="noopener noreferrer">Discount types</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-usage-dates" aria-labelledby="s2-h-usage">
+      <h3 id="s2-h-usage">Usage limits &amp; active dates</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Discount usage limits and active dates">
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-usage-limits.png" alt="Maximum discount uses: limit total uses and per customer" width="1200" height="800" loading="lazy">
+                  <figcaption>Cap total redemptions or one use per customer (tracked by email or phone).</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-dates.png" alt="Active dates with start and optional end date and time" width="1200" height="800" loading="lazy">
+                  <figcaption>Schedule start (required) and end (optional) down to the minute.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Under <strong>Maximum discount uses</strong>, cap how many times a code can run across the store, and/or limit to <strong>one use per customer</strong> using verified email or phone. The <strong>Active dates</strong> block at the bottom of each discount sets the live window—start is required; end is optional.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-types/percentage-fixed-amount" target="_blank" rel="noopener noreferrer">Amount off discounts (limits &amp; scheduling)</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-stacking" aria-labelledby="s2-h-stack">
+      <h3 id="s2-h-stack">Stacking rules (combinations)</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <figure class="content-figure">
+            <img src="assets/section2/discount-combinations.png" alt="Discount combinations checkboxes for product order and shipping discounts" width="1200" height="800" loading="lazy">
+            <figcaption>Choose which discount <em>classes</em> may combine with this promotion.</figcaption>
+          </figure>
+        </div>
+        <div class="topic-split-body">
+          <p>Each discount belongs to a <strong>class</strong>: product (lines/collections), order (subtotal), or shipping. When you allow combinations, you pick which other classes can stack so buyers get the best legitimate total. Multiple product, order, and shipping discounts can apply to one order when their combination rules permit—plan your matrix so finance and CX agree on outcomes.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-combinations" target="_blank" rel="noopener noreferrer">Discount combinations</a></li>
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-combinations#examples" target="_blank" rel="noopener noreferrer">Combination examples</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-catalogs-salsify" aria-labelledby="s2-h-catalogs">
+      <h3 id="s2-h-catalogs">Source of truth for pricing (e.g. Salsify &amp; catalogs)</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Catalog list and single catalog pricing">
+                <figure class="content-figure">
+                  <img src="assets/section2/catalog-management.png" alt="Catalogs list with status assignments adjustments and product counts" width="1200" height="800" loading="lazy">
+                  <figcaption>Many price lists, regions, and company assignments in one place.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section2/catalog-bronze.png" alt="Catalog Bronze with company locations and percentage price adjustment" width="1200" height="800" loading="lazy">
+                  <figcaption>A catalog ties products, adjustments, and overrides to specific buyers or locations.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Pricing often originates in an <strong>ERP or PIM</strong> and flows into Shopify via integration. <strong>Salsify</strong> is a common PIM; Shopify provides a <strong>Salsify connector</strong> path for product information (see Shopify’s enterprise overview). <strong>Catalogs</strong> hold the published assortment and price for each audience—company locations, markets, or hybrid rules—so list price is authoritative inside Shopify even when the upstream system remains the long-term source of truth.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://www.shopify.com/enterprise/blog/product-information-management-shopify-salsify" target="_blank" rel="noopener noreferrer">PIM: Shopify &amp; Salsify</a></li>
+            <li><a href="https://help.shopify.com/en/manual/b2b/catalogs" target="_blank" rel="noopener noreferrer">Catalogs</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-launchpad" aria-labelledby="s2-h-launch">
+      <h3 id="s2-h-launch">Scheduled promotions &amp; Launchpad events</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Discount date range and Launchpad">
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-date-range.png" alt="Unsaved discount showing segments minimums combinations and active dates" width="1200" height="800" loading="lazy">
+                  <figcaption>Full discount editor: eligibility, limits, combinations, and scheduled active dates.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section2/launchpad.png" alt="Launchpad event scheduling start end product release and discounts" width="1200" height="800" loading="lazy">
+                  <figcaption>Launchpad coordinates timed releases, creative, and more around an event window.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Every discount carries its own <strong>active date range</strong>. For broader seasonal plays, <strong>Launchpad</strong> (Shopify Plus) can orchestrate the same window across <strong>pricing changes</strong>, <strong>channel product releases</strong>, <strong>inventory bumps</strong>, <strong>theme or content swaps</strong>, <strong>checkout scripts</strong> (where used), optional <strong>password pages</strong> for hype, and <strong>event reporting</strong>—so merchandising, marketing, and ops move together.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-types/percentage-fixed-amount" target="_blank" rel="noopener noreferrer">Scheduling amount-off discounts</a></li>
+            <li><a href="https://help.shopify.com/en/manual/promoting-marketing/create-marketing/launchpad" target="_blank" rel="noopener noreferrer">Launchpad</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block topic-block--dialogue" id="s2-sitka-questions" aria-labelledby="s2-h-sitka">
+      <h3 id="s2-h-sitka">Sitka team, let’s align on these</h3>
+      <p class="dialogue-lede">Pricing operations—so we mirror how you run outlet and seasonal programs.</p>
+      <ul class="dialogue-list">
+        <li>
+          <strong>Related to:</strong> Schedule pricing updates for seasonal change &amp; outlet<br>
+          <p class="dialogue-q">How are these handled today—seasonal <em>discounts</em> or updated <em>price lists</em> (or both)?</p>
+        </li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ═══════════ SECTION 3 ═══════════ -->
+  <article class="topic-section" id="section-3" aria-labelledby="section-3-title">
+    <div class="section-label">Section 03</div>
+    <h2 id="section-3-title" class="headline" style="font-size:clamp(1.6rem,3vw,2.4rem)">
+      Pro program, catalogs<br><span class="accent">&amp; multi-location ops</span>
+    </h2>
+    <p class="subhead" style="margin-top:12px">
+      How list pricing reaches companies and markets, how pro applications move through Forms and Flow, and how inventory, shipping profiles, and order routing work together for omnichannel fulfillment.
+    </p>
+
+    <section class="topic-block" id="s3-pro-pricing" aria-labelledby="s3-h-pro-price">
+      <h3 id="s3-h-pro-price">Pro pricing (customer groups &amp; price lists)</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Company and market catalog assignment">
+                <figure class="content-figure">
+                  <img src="assets/section3/company-assigned-catalogs.png" alt="Company profile with assigned catalogs and approved status" width="1200" height="800" loading="lazy">
+                  <figcaption>Catalogs tied to a company so every buyer on that account sees the same list.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/market-assigned-catalogs.png" alt="United States market with assigned catalog and metafields" width="1200" height="800" loading="lazy">
+                  <figcaption>Markets can publish their own catalog so regional pricing stays scoped.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Assign <strong>catalogs</strong> to <strong>companies and locations</strong> so any buyer shopping on behalf of that account sees the correct list prices online and in <strong><a href="https://help.shopify.com/en/manual/sell-in-person" target="_blank" rel="noopener noreferrer">Shopify POS</a></strong>. You can also assign catalogs at the <strong>market</strong> level so shoppers in that market see market-specific pricing—whether the motion is account-based wholesale or broader <strong>D2C</strong>. A catalog is the assortment and prices you publish for a defined audience (for example, visitors browsing from Canada and the United States under one catalog). <strong>Markets</strong> now support richer segmentation, including <strong>submarkets</strong>, so you can represent narrower customer or regional slices. POS stays aligned with admin pricing so updates propagate consistently across retail and digital channels.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://shopify.dev/docs/apps/build/markets/catalogs-different-markets" target="_blank" rel="noopener noreferrer">Catalogs in Markets (dev)</a></li>
+            <li><a href="https://help.shopify.com/en/manual/markets-new/catalogs" target="_blank" rel="noopener noreferrer">Market catalogs</a></li>
+            <li><a href="https://help.shopify.com/en/manual/markets-new/overview" target="_blank" rel="noopener noreferrer">Markets overview</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s3-account-requests" aria-labelledby="s3-h-account">
+      <h3 id="s3-h-account">Pro program applications &amp; approvals</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Account request form and Flow templates">
+                <figure class="content-figure">
+                  <img src="assets/section3/forms-account-request.png" alt="Shopify Forms account request with company fields and document upload" width="1200" height="800" loading="lazy">
+                  <figcaption>Collect tax IDs, documents, and custom fields before review.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/account-request-flow-templates.png" alt="Flow template search for account request automations" width="1200" height="800" loading="lazy">
+                  <figcaption>Browse templates for B2B onboarding, tags, and internal notifications.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/account-request-flow-example.png" alt="Flow workflow for company created by account request with Admin API action" width="1200" height="800" loading="lazy">
+                  <figcaption>Automate permissions, emails, and Admin API steps after a request.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>The <strong><a href="https://apps.shopify.com/govx-id?st_campaign=admin-search&amp;st_source=admin-web&amp;utm_campaign=admin-search&amp;utm_source=shopify" target="_blank" rel="noopener noreferrer">GovX ID</a></strong> app is one path to <strong>verify professional identity</strong> at signup. Other identity providers can exchange data with Shopify through <strong>APIs, middleware, or connectors</strong>; attributes can live in <strong>metafields</strong> or <strong>metaobjects</strong> and sync to downstream apps the same way. <strong>Shopify Forms</strong> ingests <strong>account requests</strong> with a field layout you control—add or remove inputs to match your underwriting checklist. <strong>Shopify Flow</strong> layers on top to automate as much or as little as you need: alerts, tagging, company setup, and follow-on Admin API actions.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://apps.shopify.com/govx-id?st_campaign=admin-search&amp;st_source=admin-web&amp;utm_campaign=admin-search&amp;utm_source=shopify" target="_blank" rel="noopener noreferrer">GovX ID (App Store)</a></li>
+            <li><a href="https://help.shopify.com/en/manual/promoting-marketing/create-marketing/forms-app" target="_blank" rel="noopener noreferrer">Shopify Forms</a></li>
+            <li><a href="https://help.shopify.com/en/manual/promoting-marketing/create-marketing/forms-app/create" target="_blank" rel="noopener noreferrer">Create a form</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s3-locations" aria-labelledby="s3-h-locations">
+      <h3 id="s3-h-locations">Multiple physical &amp; virtual locations</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Inventory by location, location fulfillment, shipping profile">
+                <figure class="content-figure">
+                  <img src="assets/section3/product-location-inventory.png" alt="Product inventory table by location with available and committed quantities" width="1200" height="800" loading="lazy">
+                  <figcaption>Each location carries its own available, committed, and on-hand picture.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/location-fulfillment-configuration.png" alt="Location settings for online fulfillment shipping pickup and POS" width="1200" height="800" loading="lazy">
+                  <figcaption>Per location: ship, deliver locally, pickup, and online fulfillment toggles.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/shipping-zone-configuration.png" alt="General shipping profile with locations and domestic zone rates" width="1200" height="800" loading="lazy">
+                  <figcaption>Shipping profiles tie products, origin locations, and zone rates together.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Stock products across <strong>retail stores, warehouses, dropship apps, and custom fulfillment services</strong> at the same time. When a SKU is enabled at multiple locations, <strong>inventory is tracked separately per site</strong>—quantities are not pooled across locations. Fulfillment follows your <strong><a href="https://help.shopify.com/en/manual/fulfillment/setup/order-routing" target="_blank" rel="noopener noreferrer">order routing</a></strong> and <strong><a href="https://help.shopify.com/en/manual/fulfillment/setup/shipping-profiles" target="_blank" rel="noopener noreferrer">shipping profiles</a></strong>: routing decides <em>where</em> to fulfill, while each <strong>shipping profile</strong> defines the shipping rules (products, originating locations, and zones/rates) that buyers see at checkout.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/products/inventory/setup/multi-managed-inventory" target="_blank" rel="noopener noreferrer">Multi-managed inventory</a></li>
+            <li><a href="https://help.shopify.com/en/manual/fulfillment/setup/order-routing" target="_blank" rel="noopener noreferrer">Order routing</a></li>
+            <li><a href="https://help.shopify.com/en/manual/fulfillment/setup/shipping-profiles" target="_blank" rel="noopener noreferrer">Shipping profiles</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s3-routing" aria-labelledby="s3-h-routing">
+      <h3 id="s3-h-routing">Role- &amp; priority-based allocation, omni-channel inventory</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Order routing rules and add rule modal">
+                <figure class="content-figure">
+                  <img src="assets/section3/order-routing.png" alt="Order routing rules list minimize split fulfillments market and closest location" width="1200" height="800" loading="lazy">
+                  <figcaption>Rules run top to bottom; reorder or extend the playbook as operations evolve.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/order-routing-add-rule.png" alt="Add rule modal with ranked locations and location metafield options" width="1200" height="800" loading="lazy">
+                  <figcaption>Add ranked locations, metafield-driven priority, and other standard rules.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p><strong>Order routing</strong> is how Shopify applies <strong>allocation rules</strong> across online, retail, and hybrid journeys: a <strong>series of rules</strong> evaluates each order, ranks eligible locations, and assigns fulfillment to the best-ranked sites that can service the cart. Built-in defaults already bias toward <strong>complete shipments</strong>, <strong>staying inside the buyer’s market</strong>, and using <strong>closest stock</strong>—if that matches your network, you may not need custom logic. For bespoke prioritization, add rules such as <strong>ranked locations</strong> or <strong>location metafields</strong>, and extend behavior with the <strong><a href="https://shopify.dev/docs/api/functions/latest/order-routing-location-rule" target="_blank" rel="noopener noreferrer">Order Routing Location Rule</a></strong> on <strong><a href="https://shopify.dev/docs/api/functions/current" target="_blank" rel="noopener noreferrer">Shopify Functions</a></strong>. Functions let you inject custom backend decisions into checkout, draft orders, edits, imports, and post-checkout surfaces that re-run or read routing outcomes.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/fulfillment/setup/order-routing/understanding-order-routing" target="_blank" rel="noopener noreferrer">Understanding order routing</a></li>
+            <li><a href="https://shopify.dev/docs/api/functions/latest/order-routing-location-rule" target="_blank" rel="noopener noreferrer">Order Routing Location Rule API</a></li>
+            <li><a href="https://shopify.dev/docs/api/functions/current" target="_blank" rel="noopener noreferrer">Shopify Functions</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block topic-block--dialogue" id="s3-sitka-questions" aria-labelledby="s3-h-sitka">
+      <h3 id="s3-h-sitka">Sitka team, let’s align on these</h3>
+      <p class="dialogue-lede">Aligning pro pricing, channels, and integrations with how you operate today.</p>
+      <ul class="dialogue-list">
+        <li>
+          <strong>Related to:</strong> Pro pricing (customer groups / price lists)<br>
+          <p class="dialogue-q">What kind of multi-warehouse inventory rules would you like to put in place?</p>
+        </li>
+        <li>
+          <strong>Related to:</strong> Consistent pricing online &amp; in-store<br>
+          <p class="dialogue-q">Are you offering different pricing for pros in-store vs online?</p>
+        </li>
+        <li>
+          <strong>Related to:</strong> Best pricing logic online &amp; in-store during promotions<br>
+          <p class="dialogue-q">Can you give an example of when this would be a consideration?</p>
+        </li>
+        <li>
+          <strong>Related to:</strong> Wholesale Shed + Wisetail (LMS)—SSO and points-based tiers (customer group discounts)<br>
+          <p class="dialogue-q">What functionality would you like to live in Shopify from your LMS? What is the desired user journey?</p>
+        </li>
+        <li>
+          <strong>Related to:</strong> Customer groups / roles (Pro)<br>
+          <p class="dialogue-q">Can you elaborate—what are you looking for from a functionality perspective for pro customer groups and roles?</p>
+        </li>
+      </ul>
+    </section>
+  </article>
+
+  <!-- ═══════════ SECTION 4 ═══════════ -->
+  <article class="topic-section" id="section-4" aria-labelledby="section-4-title">
+    <div class="section-label">Section 04</div>
+    <h2 id="section-4-title" class="headline" style="font-size:clamp(1.6rem,3vw,2.4rem)">
+      Analytics, data layer<br><span class="accent">&amp; Google Tag Manager</span>
+    </h2>
+    <p class="subhead" style="margin-top:12px">
+      Keep measurement stable as you scale: a single <strong>data layer</strong> contract, <strong>GTM</strong> on every surface, <strong>consent-aware</strong> firing for Google and third parties, and rich <strong>ecommerce</strong> payloads for every product touchpoint.
+    </p>
+
+    <section class="topic-block" id="s4-objectives" aria-labelledby="s4-h-objectives">
+      <h3 id="s4-h-objectives">Objectives: consistent measurement &amp; routing</h3>
+      <p>The goal is to <strong>preserve your existing data layer definition</strong>—the same event names and parameter shapes shoppers already generate—while covering the full journey: <strong>browse and cart stages</strong>, <strong>abandonment signals</strong>, the <strong>checkout funnel</strong>, and <strong>completed purchases</strong>, plus merchandising insight such as <strong>popular and related products</strong>. <strong>Google Tag Manager</strong> should load on <strong>every page template</strong> so tags can forward hits to <strong>Google Analytics</strong>, <strong>Google Ads</strong>, <strong>Meta</strong>, and any other vendors that must respect cookie choices. Implementation should favor <strong>early, reliable pushes</strong> to <code>dataLayer</code> on navigation and interaction so downstream tags read fresh state without race conditions.</p>
+    </section>
+
+    <section class="topic-block" id="s4-requirements" aria-labelledby="s4-h-req">
+      <h3 id="s4-h-req">High-level &amp; technical requirements</h3>
+      <p>Maintain <strong>parity</strong> with your current spec: no silent renames or dropped fields. Where events carry an <strong>ecommerce object</strong>, each line item should include the <strong>granular product attributes</strong> your dashboards expect (not just SKU and price). Consent changes—<strong>first choice and every update</strong>—should be observable in the data layer so GTM can <strong>gate or reconfigure tags</strong> and you retain an audit trail for compliance tooling.</p>
+      <div class="callout-vendor" role="note" aria-labelledby="s4-vendor-label">
+        <span id="s4-vendor-label" class="callout-vendor-label">Technical setup your partner handles</span>
+        <p class="callout-vendor-body">Someone on the build side (agency or dev) needs to hook up two kinds of data for tracking to work the way you expect. First: <strong>extra product fields</strong> you care about—anything beyond the basics—so those values show up where Google Tag Manager and your analytics tools read them. Second: <strong>promotional content on the site</strong>—things like banners or featured modules—so you can tell when shoppers <strong>saw</strong> them and when they <strong>clicked</strong> them. If those aren’t wired in, promotion and product reports can look wrong even when the storefront looks fine.</p>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s4-events" aria-labelledby="s4-h-events">
+      <h3 id="s4-h-events">Interactions to instrument</h3>
+      <p>Align GTM triggers and tag configurations to emit (or pass through) at least the following. Add <strong>custom events</strong> for experiences such as a <strong>system builder</strong> or other interactive tools.</p>
+      <ul class="mini-list" aria-label="Required tracking interactions">
+        <li><span class="dot" aria-hidden="true"></span><span><strong>Purchase</strong> on the order confirmation / thank-you experience</span></li>
+        <li><span class="dot" aria-hidden="true"></span><span><strong>Cart and checkout</strong> funnel steps</span></li>
+        <li><span class="dot" aria-hidden="true"></span><span><strong>Add to cart</strong> and <strong>remove from cart</strong></span></li>
+        <li><span class="dot" aria-hidden="true"></span><span><strong>Promotion clicks</strong> and <strong>promotion impressions</strong> (e.g. merchandising banners)</span></li>
+        <li><span class="dot" aria-hidden="true"></span><span><strong>view_item</strong>, <strong>select_item</strong>, <strong>view_item_list</strong></span></li>
+        <li><span class="dot" aria-hidden="true"></span><span><strong>On-site search</strong> usage and results</span></li>
+        <li><span class="dot" aria-hidden="true"></span><span><strong>Custom events</strong> for non-catalog interactions</span></li>
+      </ul>
+    </section>
+
+    <section class="topic-block" id="s4-native-analytics" aria-labelledby="s4-h-native">
+      <h3 id="s4-h-native">Native analytics in Shopify admin</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Shopify admin analytics screenshots">
+                <figure class="content-figure">
+                  <img src="assets/section4/analytics-dashboard.png" alt="Shopify Analytics dashboard with gross sales, orders, sales over time, sales by channel, average order value, and top products" width="1200" height="800" loading="lazy">
+                  <figcaption>Dashboard metric cards and charts—sales, channels, AOV, and top products—without GTM.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section4/analytics-reports-list.png" alt="Shopify Reports list showing Acquisition and Behavior reports such as sessions and checkout conversion" width="1200" height="800" loading="lazy">
+                  <figcaption>Built-in report catalog: acquisition, behavior, checkout conversion, search, and more.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section4/analytics-bounce-rate-report.png" alt="Bounce rate over time report with ShopifyQL query from sessions and line chart" width="1200" height="800" loading="lazy">
+                  <figcaption>Deep dives and explorations (e.g. sessions metrics) in the report editor.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>Alongside your <strong>data layer</strong> and <strong>GTM</strong> work, Shopify provides its own <strong>reporting in admin</strong>—a separate track from GA4 or Meta pixels, but useful for day-to-day merchandising and performance checks. The <strong>Analytics</strong> area includes a customizable <strong>dashboard</strong> made of metric cards (for example <strong>net sales by channel</strong> and <strong>sessions by device type</strong>); each card can open a deeper <strong>report</strong>, and explorations you save can add new cards to the library. <strong>Live View</strong> shows real-time <strong>online store</strong> activity when you run a storefront. Staff need the right <strong>Analytics permissions</strong> to see these views.</p>
+          <p>This <strong>does not replace</strong> your client-side event spec: tags that read <code>dataLayer</code> for <strong>Google Analytics</strong>, <strong>Ads</strong>, <strong>Meta</strong>, and other tools still need to be implemented and consent-gated as you’ve outlined above. Where your plan supports it, <strong>ShopifyQL</strong> also lets you query commerce datasets—such as <strong>sales</strong>, <strong>orders</strong>, <strong>products</strong>, <strong>customers</strong>, and <strong>sessions</strong>—for custom analysis inside Shopify’s reporting model.</p>
+          <p>On the <strong>privacy</strong> side, Shopify exposes the <strong>Customer Privacy API</strong> so the storefront knows what processing is allowed (analytics, marketing, preferences, and related signals). That is what third-party consent tools and your GTM rules ultimately need to stay aligned with—covered in more detail in the next section for OneTrust and tag firing.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/reports-and-analytics/shopify-reports" target="_blank" rel="noopener noreferrer">Shopify analytics</a></li>
+            <li><a href="https://help.shopify.com/en/manual/reports-and-analytics/shopify-reports/overview-dashboard" target="_blank" rel="noopener noreferrer">Analytics dashboard</a></li>
+            <li><a href="https://help.shopify.com/en/manual/reports-and-analytics/shopify-reports/report-types/default-reports" target="_blank" rel="noopener noreferrer">Default reports</a></li>
+            <li><a href="https://shopify.dev/docs/apps/build/shopifyql" target="_blank" rel="noopener noreferrer">ShopifyQL</a></li>
+            <li><a href="https://shopify.dev/docs/api/customer-privacy" target="_blank" rel="noopener noreferrer">Customer Privacy API</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s4-consent" aria-labelledby="s4-h-consent">
+      <h3 id="s4-h-consent">OneTrust, cookie preferences &amp; GTM</h3>
+      <p><strong>OneTrust</strong> (and similar platforms) centralize <strong>consent and preference management</strong>—cookie banners, category-level choices, and records of what visitors agreed to—so marketing and analytics tags don’t run out of policy. Shopify’s overview of OneTrust highlights how consent can be <strong>stored centrally</strong> and <strong>synced</strong> to connected systems, reducing manual spreadsheet work and keeping email, ads, and onsite tracking aligned when someone updates preferences.</p>
+      <p>For your stack, the implementation pattern is: capture <strong>initial and updated consent</strong> in the data layer (or Consent Mode–compatible signals), use <strong>GTM</strong> to <strong>condition tag firing</strong> on those categories, and only then load or un-block <strong>Google Analytics</strong>, <strong>Ads</strong>, <strong>Meta pixels</strong>, and other third-party scripts. Document the mapping from OneTrust categories → GTM consent variables → each vendor tag so QA can verify opt-in and opt-down paths.</p>
+      <ul class="resource-links doc-buttons">
+        <li><a href="https://www.shopify.com/ca/blog/what-is-onetrust" target="_blank" rel="noopener noreferrer">What is OneTrust? (Shopify)</a></li>
+      </ul>
+    </section>
+
+    <section class="topic-block" id="s4-ga4-gtm" aria-labelledby="s4-h-ga4">
+      <h3 id="s4-h-ga4">GA4, Shopify &amp; the Google sales channel</h3>
+      <p><strong>Google Analytics 4</strong> uses an <strong>event-based model</strong>: page loads, clicks, adds-to-cart, and purchases are discrete events with parameters, which suits omnichannel shoppers better than older session-only views. In Shopify, wiring GA typically starts with the <strong>Google &amp; YouTube</strong> channel: it helps create <strong>data streams</strong>, connect <strong>Merchant Center</strong>, and surface Google’s measurement tools from admin—complementing whatever you inject through <strong>GTM</strong> and your custom data layer. Shopify’s Help Center walks through <strong>Google Analytics setup</strong> for stores; the ecommerce guide below ties those concepts to <strong>merchandising and conversion</strong> reporting.</p>
+      <ul class="resource-links doc-buttons">
+        <li><a href="https://help.shopify.com/en/manual/reports-and-analytics/google-analytics/google-analytics-setup" target="_blank" rel="noopener noreferrer">Google Analytics setup (Help)</a></li>
+        <li><a href="https://www.shopify.com/blog/14681601-google-analytics-for-ecommerce-a-beginners-guide" target="_blank" rel="noopener noreferrer">GA4 for ecommerce (Shopify)</a></li>
+        <li><a href="https://apps.shopify.com/google?st_campaign=admin-search&amp;st_source=admin-web&amp;utm_campaign=admin-search&amp;utm_source=shopify" target="_blank" rel="noopener noreferrer">Google &amp; YouTube app</a></li>
+      </ul>
+    </section>
+  </article>
+</main>
+
+<div id="image-lightbox" class="image-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot">
+  <button type="button" class="image-lightbox-close" aria-label="Close enlarged image">×</button>
+  <div class="image-lightbox-inner">
+    <img class="image-lightbox-img" src="" alt="">
+  </div>
+  <p class="image-lightbox-hint">Click the dark area or press Esc to close</p>
+</div>
+
+<script>
+  (function () {
+    var bar = document.getElementById('reading-progress');
+    function updateProgress() {
+      var doc = document.documentElement;
+      var scrollTop = doc.scrollTop || document.body.scrollTop;
+      var height = doc.scrollHeight - doc.clientHeight;
+      var pct = height > 0 ? (scrollTop / height) * 100 : 0;
+      bar.style.width = pct + '%';
+    }
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress);
+    updateProgress();
+  })();
+
+  (function () {
+    function initFigureScrolls() {
+      document.querySelectorAll('.figure-scroll-wrap').forEach(function (wrap) {
+        var sc = wrap.querySelector('.figure-scroll');
+        var prev = wrap.querySelector('.figure-scroll-prev');
+        var next = wrap.querySelector('.figure-scroll-next');
+        if (!sc || !prev || !next) return;
+
+        function update() {
+          var maxScroll = sc.scrollWidth - sc.clientWidth;
+          var scrollable = maxScroll > 4;
+          wrap.classList.toggle('is-scrollable', scrollable);
+          if (!scrollable) {
+            prev.disabled = true;
+            next.disabled = true;
+            wrap.classList.add('at-start', 'at-end');
+            return;
+          }
+          var left = sc.scrollLeft;
+          wrap.classList.toggle('at-start', left <= 4);
+          wrap.classList.toggle('at-end', left >= maxScroll - 4);
+          prev.disabled = left <= 4;
+          next.disabled = left >= maxScroll - 4;
+        }
+
+        function scrollStep(dir) {
+          var delta = Math.min(400, Math.max(200, sc.clientWidth * 0.72));
+          sc.scrollBy({ left: dir * delta, behavior: 'smooth' });
+        }
+
+        prev.addEventListener('click', function () { scrollStep(-1); });
+        next.addEventListener('click', function () { scrollStep(1); });
+
+        sc.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            scrollStep(-1);
+          }
+          if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            scrollStep(1);
+          }
+        });
+
+        sc.addEventListener('scroll', function () {
+          window.requestAnimationFrame(update);
+        }, { passive: true });
+
+        window.addEventListener('resize', function () {
+          window.requestAnimationFrame(update);
+        });
+
+        if (typeof ResizeObserver !== 'undefined') {
+          var ro = new ResizeObserver(function () {
+            update();
+          });
+          ro.observe(sc);
+        }
+
+        sc.querySelectorAll('img').forEach(function (img) {
+          if (!img.complete) {
+            img.addEventListener('load', function () {
+              window.requestAnimationFrame(update);
+            });
+          }
+        });
+
+        update();
+        window.requestAnimationFrame(update);
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initFigureScrolls);
+    } else {
+      initFigureScrolls();
+    }
+  })();
+
+  (function () {
+    var main = document.querySelector('main');
+    var lb = document.getElementById('image-lightbox');
+    if (!main || !lb) return;
+
+    var lbImg = lb.querySelector('.image-lightbox-img');
+    var closeBtn = lb.querySelector('.image-lightbox-close');
+
+    function openLightbox(img) {
+      if (!img || img.tagName !== 'IMG' || !img.src) return;
+      lbImg.src = img.currentSrc || img.src;
+      lbImg.alt = img.alt || '';
+      lb.classList.add('is-open');
+      lb.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      closeBtn.focus();
+    }
+
+    function closeLightbox() {
+      lb.classList.remove('is-open');
+      lb.setAttribute('aria-hidden', 'true');
+      lbImg.src = '';
+      lbImg.alt = '';
+      document.body.style.overflow = '';
+    }
+
+    main.addEventListener('click', function (e) {
+      var t = e.target;
+      if (t.tagName !== 'IMG') return;
+      if (!t.closest('.content-figure')) return;
+      if (!t.closest('#section-1') && !t.closest('#section-2') && !t.closest('#section-3') && !t.closest('#section-4')) return;
+      e.preventDefault();
+      openLightbox(t);
+    });
+
+    closeBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      closeLightbox();
+    });
+
+    lb.addEventListener('click', function (e) {
+      if (e.target === lb) closeLightbox();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && lb.classList.contains('is-open')) {
+        closeLightbox();
+      }
+    });
+
+    lb.setAttribute('aria-hidden', 'true');
+  })();
+</script>
+
+</body>
+</html>
