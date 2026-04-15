@@ -468,17 +468,48 @@
     max-width: min(96vw, 1680px);
     max-height: 92vh;
     margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .image-lightbox-figure {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 100%;
   }
   .image-lightbox-img {
     display: block;
     max-width: min(96vw, 1680px);
-    max-height: 92vh;
+    max-height: min(72vh, calc(92vh - 140px));
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 10px;
     box-shadow: 0 24px 80px rgba(0,0,0,0.55);
     border: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+  .image-lightbox-caption {
+    margin: 0;
+    max-width: min(96vw, 720px);
+    padding: 0 12px 8px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+  }
+  .image-lightbox-caption:empty {
+    display: none;
+  }
+  .image-lightbox-caption strong {
+    color: #fff;
+    font-weight: 600;
   }
   .image-lightbox-close {
     position: fixed;
@@ -934,6 +965,19 @@
     </div>
   </header>
 
+  <!-- ═══════════ UPDATE BANNER ═══════════ -->
+  <div style="max-width:980px;margin:0 auto 48px;padding:20px 24px;border-radius:14px;background:linear-gradient(145deg,rgba(0,128,96,0.14),rgba(149,191,71,0.08));border:1px solid rgba(149,191,71,0.35);" role="note">
+    <span style="display:block;font-size:0.68rem;font-weight:800;text-transform:uppercase;letter-spacing:0.1em;color:var(--lime);margin-bottom:10px;">What's new</span>
+    <p style="margin:0 0 14px;font-size:0.93rem;line-height:1.55;color:rgba(255,255,255,0.88);">We've refreshed the scenarios site with a few new topics and clearer B2B/POS language—highlights below.</p>
+    <ul style="margin:0;padding-left:18px;font-size:0.88rem;line-height:1.7;color:rgba(255,255,255,0.78);display:flex;flex-direction:column;gap:6px;">
+      <li><strong style="color:rgba(255,255,255,0.95);">Checkout &amp; catalog — Quantity limits:</strong> added a second screenshot showing how rules appear per variant in the catalog (including <em>Mixed</em> at the product level when variants differ); copy now states limits are at the variant level.</li>
+      <li><strong style="color:rgba(255,255,255,0.95);">Coupons, promotions &amp; channels — Gift with purchase:</strong> new section explaining GWP using Shopify's Buy X get Y discounts.</li>
+      <li><strong style="color:rgba(255,255,255,0.95);">Coupons, promotions &amp; channels — Discount sales channel configuration:</strong> new section with visuals for POS eligibility, sales channel access, and discount details; narrative covers how discount codes vs automatic discounts behave across channels.</li>
+      <li><strong style="color:rgba(255,255,255,0.95);">Pro / B2B retail — Section intro:</strong> updated to speak to B2B for Pros online and in-store—onboarding, right products/discounts, mixed carts, and allocation/warehouse inventory.</li>
+      <li><strong style="color:rgba(255,255,255,0.95);">Pro / B2B retail — POS Pro experience:</strong> new end-of-section topic covering how POS UI extensions and B2B-style apps let staff attach the right buyer, see catalog-consistent pricing, run mixed carts, and collect payment.</li>
+    </ul>
+  </div>
+
   <!-- ═══════════ SECTION 1 ═══════════ -->
   <article class="topic-section" id="section-1" aria-labelledby="section-1-title">
     <div class="section-label">Section 01</div>
@@ -970,13 +1014,27 @@
         <h4>Quantity limits by role or SKU</h4>
         <div class="topic-split">
           <div class="topic-split-media">
-            <figure class="content-figure">
-              <img src="assets/section1/qty-rules.png" alt="Admin: edit quantity rules and volume pricing for a product variant" width="1200" height="800" loading="lazy">
-              <figcaption>Minimum, maximum, and increment rules at the catalog/SKU level flow to B2B buyers on assigned catalogs.</figcaption>
-            </figure>
+            <div class="figure-scroll-wrap">
+              <div class="figure-scroll-clip">
+                <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="B2B catalog quantity rules and variant-level status">
+                  <figure class="content-figure">
+                    <img src="assets/section1/qty-rules.png" alt="Admin: edit quantity rules and volume pricing for a product variant" width="1200" height="800" loading="lazy">
+                    <figcaption>Set minimum, maximum, and increment in the catalog for each variant.</figcaption>
+                  </figure>
+                  <figure class="content-figure">
+                    <img src="assets/section1/qty-rules-variant-catalog.png" alt="Catalog product Alta Vista Rain Jacket with four variants expanded showing Applied status on some variants and Mixed at product level" width="1200" height="800" loading="lazy">
+                    <figcaption>Limits and rule status apply <strong>per variant</strong>; the product row can show <strong>Mixed</strong> when variants differ.</figcaption>
+                  </figure>
+                </div>
+              </div>
+              <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+                <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+                <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+              </div>
+            </div>
           </div>
           <div class="topic-split-body">
-            <p>Set min, max, and increment per variant inside <strong>B2B catalogs</strong>. Assign the catalog to a <strong>company location</strong>: every contact tied to that location inherits the same limits—ideal for MOQs, case packs, and wholesale guardrails. Rules are enforced through catalog configuration rather than ad hoc per checkout.</p>
+            <p>Quantity rules in <strong>B2B catalogs</strong> are applied at the <strong>variant</strong> level (each sellable option—not only at the parent product). Configure min, max, and increment per variant in the catalog; assign the catalog to a <strong>company location</strong> so every contact tied to that location inherits the same rules—ideal for MOQs, case packs, and wholesale guardrails. In the catalog product list, you'll see rule state on each variant (for example <strong>Applied</strong>); the parent line may show <strong>Mixed</strong> when variants don't all share the same status. Enforcement is through catalog configuration rather than ad hoc per checkout.</p>
             <ul class="resource-links doc-buttons">
               <li><a href="https://help.shopify.com/en/manual/b2b/catalogs/quantity-pricing" target="_blank" rel="noopener noreferrer">B2B quantity rules &amp; volume pricing</a></li>
             </ul>
@@ -1207,20 +1265,6 @@
       </div>
     </section>
 
-    <section class="topic-block topic-block--dialogue" id="s1-alignment-topics" aria-labelledby="s1-h-dialogue">
-      <h3 id="s1-h-dialogue">Sitka team, let’s align on these</h3>
-      <p class="dialogue-lede">Two areas where your examples will help us pin down the right Shopify patterns.</p>
-      <ul class="dialogue-list">
-        <li>
-          <strong>Related to:</strong> Role based pricing enforcement (Mixed Carts/Overrides/Promotions)<br>
-          <p class="dialogue-q">Can you provide more context around the use cases here?</p>
-        </li>
-        <li>
-          <strong>Related to:</strong> Shipping Promotion Rules/Customer Group/Scheduling<br>
-          <p class="dialogue-q">Can you please elaborate on what you mean by Customer Group/Scheduling?</p>
-        </li>
-      </ul>
-    </section>
   </article>
 
   <!-- ═══════════ SECTION 2 ═══════════ -->
@@ -1422,15 +1466,59 @@
       </div>
     </section>
 
-    <section class="topic-block topic-block--dialogue" id="s2-sitka-questions" aria-labelledby="s2-h-sitka">
-      <h3 id="s2-h-sitka">Sitka team, let’s align on these</h3>
-      <p class="dialogue-lede">Pricing operations—so we mirror how you run outlet and seasonal programs.</p>
-      <ul class="dialogue-list">
-        <li>
-          <strong>Related to:</strong> Schedule pricing updates for seasonal change &amp; outlet<br>
-          <p class="dialogue-q">How are these handled today—seasonal <em>discounts</em> or updated <em>price lists</em> (or both)?</p>
-        </li>
-      </ul>
+    <section class="topic-block" id="s2-gift-with-purchase" aria-labelledby="s2-h-gwp">
+      <h3 id="s2-h-gwp">Gift with purchase</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <figure class="content-figure">
+            <img src="assets/section2/gift-with-purchase.png" alt="Create discount: automatic Buy X get Y titled Gift with Purchase—buy a specific tent, get a specific knife free" width="1200" height="800" loading="lazy">
+            <figcaption>Native <strong>Buy X get Y</strong> can express a gift-with-purchase: define the qualifying purchase and the reward item (often 100% off the "get" line).</figcaption>
+          </figure>
+        </div>
+        <div class="topic-split-body">
+          <p>Gift-with-purchase campaigns use the same Shopify <strong>discount engine</strong> as your other promos—no separate "GWP app" is required for the basic pattern. Configure a <strong>Buy X get Y</strong> discount (code or automatic), set what the customer must buy and what they receive, and tune eligibility, dates, and combination rules like any other discount. That keeps GWP in one place with reporting and checkout behavior your team already knows.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts/discount-types/buy-x-get-y" target="_blank" rel="noopener noreferrer">Buy X get Y discounts</a></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="topic-block" id="s2-discount-sales-channels" aria-labelledby="s2-h-sales-channel-discounts">
+      <h3 id="s2-h-sales-channel-discounts">Discount sales channel configuration</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Discount POS eligibility, sales channel access, and discount details including POS">
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-pos-eligibility.png" alt="Discount Eligibility: All customers selected with optional Apply on POS Pro locations checkbox" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>POS eligibility:</strong> for automatic discounts, you can extend application to <strong>POS Pro</strong> locations from eligibility (when it applies to your discount type).</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-sales-channel-access.png" alt="Sales channel access: checkbox to allow discount to be featured on linked sales channels" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>Sales channel access:</strong> when enabled, channel admins can surface the promotion in channel-native placements (for example tiles, campaigns, or social)—separate from where a code can be typed in.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section2/discount-details-including-pos.png" alt="Automatic discount details for 20% off camping showing Scheduled badge and POS Pro included in summary" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>Discount details:</strong> the summary reflects channel scope—here an automatic discount scheduled for the future shows <strong>POS Pro included</strong> alongside other rules.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p>From <strong>Discounts</strong> in the Shopify admin you control how promotions interact with <strong>sales channels</strong>—including whether a deal is <em>featured</em> on a channel versus where it can be <em>redeemed</em> or <em>applied automatically</em>. Options differ slightly for <strong>discount codes</strong> and <strong>automatic discounts</strong>; use the Help Center link below for the full matrix.</p>
+          <p>In practice: customers can use <strong>discount codes</strong> across the sales channels you have set up—you can’t limit a code to "online only" while excluding a specific channel from redemption. <strong>Automatic discounts</strong> apply across your configured sales channels by default <strong>except POS</strong>, unless you turn on POS coverage (as shown in eligibility and in the discount summary). Turning on <strong>sales channel access</strong> for a code makes the discount visible to the channel so channel operators can feature it in ads, social posts, POS tiles, and similar placements.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://help.shopify.com/en/manual/discounts/sales-channel-discounts" target="_blank" rel="noopener noreferrer">Sales channel discounts</a></li>
+          </ul>
+        </div>
+      </div>
     </section>
   </article>
 
@@ -1441,7 +1529,7 @@
       Pro program, catalogs<br><span class="accent">&amp; multi-location ops</span>
     </h2>
     <p class="subhead" style="margin-top:12px">
-      How list pricing reaches companies and markets, how pro applications move through Forms and Flow, and how inventory, shipping profiles, and order routing work together for omnichannel fulfillment.
+      Leverage Shopify's B2B functionality for your Pros, whether they're shopping online or in-store. Shopify helps streamline their onboarding and shopping experience by enabling discounts on the right products and mixed carts that can also include list-priced items, plus allocation and warehouse inventory management.
     </p>
 
     <section class="topic-block" id="s3-pro-pricing" aria-labelledby="s3-h-pro-price">
@@ -1588,31 +1676,51 @@
       </div>
     </section>
 
-    <section class="topic-block topic-block--dialogue" id="s3-sitka-questions" aria-labelledby="s3-h-sitka">
-      <h3 id="s3-h-sitka">Sitka team, let’s align on these</h3>
-      <p class="dialogue-lede">Aligning pro pricing, channels, and integrations with how you operate today.</p>
-      <ul class="dialogue-list">
-        <li>
-          <strong>Related to:</strong> Pro pricing (customer groups / price lists)<br>
-          <p class="dialogue-q">What kind of multi-warehouse inventory rules would you like to put in place?</p>
-        </li>
-        <li>
-          <strong>Related to:</strong> Consistent pricing online &amp; in-store<br>
-          <p class="dialogue-q">Are you offering different pricing for pros in-store vs online?</p>
-        </li>
-        <li>
-          <strong>Related to:</strong> Best pricing logic online &amp; in-store during promotions<br>
-          <p class="dialogue-q">Can you give an example of when this would be a consideration?</p>
-        </li>
-        <li>
-          <strong>Related to:</strong> Wholesale Shed + Wisetail (LMS)—SSO and points-based tiers (customer group discounts)<br>
-          <p class="dialogue-q">What functionality would you like to live in Shopify from your LMS? What is the desired user journey?</p>
-        </li>
-        <li>
-          <strong>Related to:</strong> Customer groups / roles (Pro)<br>
-          <p class="dialogue-q">Can you elaborate—what are you looking for from a functionality perspective for pro customer groups and roles?</p>
-        </li>
-      </ul>
+    <section class="topic-block" id="s3-pos-pro-experience" aria-labelledby="s3-h-pos-pro">
+      <h3 id="s3-h-pos-pro">POS Pro Experience</h3>
+      <div class="topic-split">
+        <div class="topic-split-media">
+          <div class="figure-scroll-wrap">
+            <div class="figure-scroll-clip">
+              <div class="figure-scroll" tabindex="0" role="region" aria-roledescription="carousel" aria-label="POS B2B tile, customer search, catalog pricing, mixed cart, and payment collection">
+                <figure class="content-figure">
+                  <img src="assets/section3/pos-b2b-tile.png" alt="Shopify POS smart grid with B2B Order tile among product tiles" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>B2B tile:</strong> add a smart-grid tile so staff start Pro/B2B flows from the same POS home screen they already use.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/pos-pro-customer-search.png" alt="Select Customer modal with POS for B2B and Wholesale search showing company result" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>Customer search:</strong> extensions can power lookup so associates attach the right buyer or company before building the cart.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/pos-pro-discounted-item.png" alt="Product Detail modal with catalog price and quantity rules for a rain jacket variant" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>Pricing &amp; rules:</strong> show catalog-aware price and quantity rules on the device so in-store lines match what that account sees online.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/pos-pro-mixed-cart.png" alt="POS order detail with multiple line items, payment pending, and Collect payment action" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>Mixed carts:</strong> ring discounted catalog lines alongside full list-price items in one order when your rules allow it.</figcaption>
+                </figure>
+                <figure class="content-figure">
+                  <img src="assets/section3/pos-pro-payment-collection.png" alt="POS checkout with payment options and order summary for logged-in customer" width="1200" height="800" loading="lazy">
+                  <figcaption><strong>Payment collection:</strong> finish with native POS tenders (cash, card, split, and more) on the same checkout surface.</figcaption>
+                </figure>
+              </div>
+            </div>
+            <div class="figure-scroll-nav-row" role="group" aria-label="Screenshot navigation">
+              <button type="button" class="figure-scroll-btn figure-scroll-prev" aria-label="Previous screenshot">‹</button>
+              <button type="button" class="figure-scroll-btn figure-scroll-next" aria-label="Next screenshot">›</button>
+            </div>
+          </div>
+        </div>
+        <div class="topic-split-body">
+          <p><strong>Shopify POS</strong> is built to be extended: partner solutions (for example apps in the spirit of <strong>Extend POS for B2B</strong>), <strong>POS UI extensions</strong>, and bespoke development can layer Pro and B2B workflows directly into the point-of-sale UI—so you are not limited to consumer-only defaults on the shop floor.</p>
+          <p>With UI extensions and the right app, retail staff can find the Pro customer’s account on the device, apply <strong>catalog-consistent pricing and discounts</strong> (aligned with what that buyer sees when signed in online), build carts that combine <strong>Pro-priced and list-priced</strong> lines where your policy allows, and <strong>collect payment</strong> using standard POS checkout. The screenshots illustrate one such integration pattern.</p>
+          <ul class="resource-links doc-buttons">
+            <li><a href="https://shopify.dev/docs/apps/build/pos" target="_blank" rel="noopener noreferrer">Build for Shopify POS (shopify.dev)</a></li>
+            <li><a href="https://help.shopify.com/en/manual/sell-in-person/getting-started/smart-grid" target="_blank" rel="noopener noreferrer">Smart grid (Help Center)</a></li>
+            <li><a href="https://apps.shopify.com/pos-for-b2b-and-wholesale?search_id=6d098fcf-096f-404e-93fa-97dad8e23319&amp;surface_detail=b2b+extend&amp;surface_inter_position=1&amp;surface_intra_position=6&amp;surface_type=search" target="_blank" rel="noopener noreferrer">POS for B2B and Wholesale (App Store)</a></li>
+          </ul>
+        </div>
+      </div>
     </section>
   </article>
 
@@ -1720,7 +1828,10 @@
 <div id="image-lightbox" class="image-lightbox" role="dialog" aria-modal="true" aria-label="Enlarged screenshot">
   <button type="button" class="image-lightbox-close" aria-label="Close enlarged image">×</button>
   <div class="image-lightbox-inner">
-    <img class="image-lightbox-img" src="" alt="">
+    <figure class="image-lightbox-figure">
+      <img class="image-lightbox-img" src="" alt="">
+      <figcaption id="image-lightbox-caption" class="image-lightbox-caption"></figcaption>
+    </figure>
   </div>
   <p class="image-lightbox-hint">Click the dark area or press Esc to close</p>
 </div>
@@ -1825,12 +1936,25 @@
     if (!main || !lb) return;
 
     var lbImg = lb.querySelector('.image-lightbox-img');
+    var lbCaption = document.getElementById('image-lightbox-caption');
     var closeBtn = lb.querySelector('.image-lightbox-close');
 
     function openLightbox(img) {
       if (!img || img.tagName !== 'IMG' || !img.src) return;
       lbImg.src = img.currentSrc || img.src;
       lbImg.alt = img.alt || '';
+      var figure = img.closest('figure');
+      var srcCap = figure ? figure.querySelector('figcaption') : null;
+      var capHtml = srcCap ? srcCap.innerHTML.trim() : '';
+      if (lbCaption) {
+        lbCaption.innerHTML = capHtml;
+        lbCaption.hidden = !capHtml;
+        if (capHtml) {
+          lb.setAttribute('aria-describedby', 'image-lightbox-caption');
+        } else {
+          lb.removeAttribute('aria-describedby');
+        }
+      }
       lb.classList.add('is-open');
       lb.setAttribute('aria-hidden', 'false');
       document.body.style.overflow = 'hidden';
@@ -1840,8 +1964,13 @@
     function closeLightbox() {
       lb.classList.remove('is-open');
       lb.setAttribute('aria-hidden', 'true');
+      lb.removeAttribute('aria-describedby');
       lbImg.src = '';
       lbImg.alt = '';
+      if (lbCaption) {
+        lbCaption.innerHTML = '';
+        lbCaption.hidden = true;
+      }
       document.body.style.overflow = '';
     }
 
